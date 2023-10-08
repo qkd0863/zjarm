@@ -24,8 +24,8 @@ struct rect
 GLvoid drawScene(GLvoid);
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
-	void Mouse(int button, int state, int x, int y);
-	void Drag(int x, int y);
+void Mouse(int button, int state, int x, int y);
+void Drag(int x, int y);
 void TimerFunction(int value);
 void convert(int x, int y, float* ox, float* oy);
 void InitBuffer();
