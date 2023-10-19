@@ -37,8 +37,9 @@ void set();
 double x1[5], Y1[5], z1[5];
 float mx = 0, my = 0;
 bool left_button;
-bool c1 = false, c2 = false, c3 = false, c4 = false, rect = false;
+bool select = true, c1 = true, c2 = true;
 float X = 30, Y = -30;
+float tx = 0, ty = 0, tz;
 float movex = 0, movey = 0;
 bool XRot = false, YRot = false, Rev = false;
 bool grain = true;
@@ -93,6 +94,9 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 	glutMainLoop();
 }
 
+GLUquadricObj* qobj;
+GLUquadricObj* qobj2;
+
 GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 {
 	GLfloat rColor, gColor, bColor;
@@ -126,7 +130,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glm::mat4 x = glm::mat4(1.0f);
 	glm::mat4 y = glm::mat4(1.0f);
 	glm::mat4 z = glm::mat4(1.0f);
-	glm::mat4 xyz = glm::mat4(1.0f);
+	glm::mat4 xy = glm::mat4(1.0f);
 
 	glm::mat4 model = glm::mat4(1.0f);
 	glm::mat4 model2 = glm::mat4(1.0f);
@@ -136,55 +140,123 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 
 	glm::mat4 xrot = glm::mat4(1.0f);
 	glm::mat4 yrot = glm::mat4(1.0f);
+	glm::mat4 rot = glm::mat4(1.0f);
 	glm::mat4 rev = glm::mat4(1.0f);
+
+	qobj = gluNewQuadric();
+	qobj2 = gluNewQuadric();
+
+	gluQuadricDrawStyle(qobj, GLU_LINE);
+	gluQuadricDrawStyle(qobj2, GLU_LINE);
+
+	GLuint changePos = glGetUniformLocation(shaderProgramID, "Pos");
 
 
 
 	
-	GLuint changePos = glGetUniformLocation(shaderProgramID, "Pos");
+	x = glm::rotate(x, glm::radians(202.f), glm::vec3(1.0, 0.0, 0.0));
+	y = glm::rotate(y, glm::radians(ty), glm::vec3(0.0, 1.0, 0.0));
+	z = glm::rotate(z, glm::radians(tz), glm::vec3(0.0, 0.0, 1.0));
 
-
-	x = glm::rotate(x, glm::radians(X), glm::vec3(1.0, 0.0, 0.0));
-	y = glm::rotate(y, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
-	z = glm::rotate(z, glm::radians(-10.0f), glm::vec3(0.0, 0.0, 1.0));
 
 	model = glm::rotate(model, glm::radians(X), glm::vec3(1.0, 0.0, 0.0));
 	model2 = glm::rotate(model2, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
 	model3 = glm::translate(model3, glm::vec3(movex, movey, 0.0f));
+	model4 = glm::translate(model4, glm::vec3(0.2, 0, 0.0f));
+	model5 = glm::translate(model5, glm::vec3(-0.4, 0, 0.0f));
 
-	model4 = model * model2 * model3;
-	model5 = model * model2;
+	xy = x * y;
 
-
-	xyz = x * y * z;
 	xrot = model3 * model;
 	yrot = model3 * model2;
-	rev =  model2;
+	rot = xrot * yrot;
+	rev = model2 * model3;
 
 
 
 
-
+	
+		
+	
 	unsigned int modelLocation = glGetUniformLocation(shaderProgramID, "transform");
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model4));
+	
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model4 * model3 * x * y));
+	if (c1)
+	{
+		if (XRot)
+		{
+			glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model4 * xrot));
+		}
+		if (YRot)
+		{
+			glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model4 * yrot));
+		}
+		if (XRot && YRot)
+		{
+			glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model4 * rot));
+		}
+	}
+	if (Rev)
+	{
+		if (c1)
+		{
+			if (XRot)
+			{
+				rev = rev * xrot;
+			}
+			if (YRot)
+			{
+				rev = rev * yrot;
+			}
+
+			if (XRot && YRot)
+			{
+				rev = rev * xrot * yrot;
+			}
+
+		}
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(rev * model4));
+	}
+	
+
+
 
 
 
 	if (Hex)
 	{
-		glBindBuffer(GL_ARRAY_BUFFER, HexPosVbo); // VBO Bind
-		glVertexAttribPointer(PosLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+		if (select)
 		{
-			glBindBuffer(GL_ARRAY_BUFFER, HexColor); // VBO Bind
-			glVertexAttribPointer(ColorLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+			glBindBuffer(GL_ARRAY_BUFFER, HexPosVbo); // VBO Bind
+			glVertexAttribPointer(PosLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+			{
+				glBindBuffer(GL_ARRAY_BUFFER, HexColor); // VBO Bind
+				glVertexAttribPointer(ColorLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+			}
+
+
+			if (wire)
+				glDrawArrays(GL_LINE_STRIP, 0, 36);
+			else
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+
 		}
-
-
-		if (wire)
-			glDrawArrays(GL_LINE_STRIP, 0, 36);
 		else
-			glDrawArrays(GL_TRIANGLES, 0, 36);
+		{
+			glBindBuffer(GL_ARRAY_BUFFER, TetPosVbo); // VBO Bind
+			glVertexAttribPointer(PosLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+			{
+				glBindBuffer(GL_ARRAY_BUFFER, TetColor); // VBO Bind
+				glVertexAttribPointer(ColorLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+			}
 
+
+			if (wire)
+				glDrawArrays(GL_LINE_STRIP, 0, 18);
+			else
+				glDrawArrays(GL_TRIANGLES, 0, 18);
+
+		}
 	}
 	else
 	{
@@ -203,25 +275,64 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	}
 
 
+	rev = model2 * model3;
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model5 * model3 * x * y));
+	if (c2)
+	{
+		if (XRot)
+		{
+			glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model5 * xrot));
+		}
+		if (YRot)
+		{
+			glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model5 * yrot));
+		}
+		if (XRot && YRot)
+		{
+			glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model5 * rot));
+		}
+	}
+	if (Rev)
+	{
+		if (c2)
+		{
+			if (XRot)
+			{
+				rev = rev * xrot;
+			}
+			if (YRot)
+			{
+				rev = rev * yrot;
+			}
+
+			if (XRot && YRot)
+			{
+				rev = rev * xrot * yrot;
+			}
+
+		}
+		
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(rev * model5));
+	}
+
+
+	if(select)
+		gluSphere(qobj, 0.2, 10, 10);
+	else
+		gluCylinder(qobj, 0.2, 0.0, 0.4, 20, 8);
 
 
 
 
-
-
-
-
-
-
+	
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(xy));
 
 
 
 	glDisableVertexAttribArray(PosLocation); // Disable 필수!
 	glDisableVertexAttribArray(ColorLocation);
+	
 
-
-
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(xyz));
 	glLineWidth(5.0);
 
 	glBegin(GL_LINES);
@@ -234,6 +345,12 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glVertex3f(0.0, 0.0, 1.0);
 	glEnd();
 	glFinish();
+
+
+
+
+	
+	
 
 	glutSwapBuffers();
 	glutPostRedisplay();
@@ -253,6 +370,18 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 
 	switch (key)
 	{
+	case '1':
+		c1 = true;
+		c2 = false;
+		break;
+	case '2':
+		c2 = true;
+		c1 = false;
+		break;
+	case '3':
+		c1 = true;
+		c2 = true;
+		break;
 	case GLUT_KEY_LEFT:
 		movex += 0.01;
 		break;
@@ -267,6 +396,7 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			YRot = false;
 		else
 			YRot = true;	
+		break;
 	case 'r':
 		if (Rev)
 			Rev = false;
@@ -288,12 +418,21 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 's':
 		X = 30;Y = -30;
 		movex = 0; movey = 0;
+		XRot = false;
+		YRot = false;
+		Rev = false;
 		break;
 	case 'c':
-		Hex = true;
+		if (select)
+			select = false;
+		else
+			select = true;
 		break;
 	case 'p':
 		Hex = false;
+		break;
+	case 'a':
+		tx++;ty++;tz++;
 		break;
 	case 'q':
 		exit(1);
@@ -378,12 +517,18 @@ void convert(int x, int y, float* ox, float* oy)
 void TimerFunction(int value)
 {
 	if (Rev)
-		Y+=3;
+	{
+		Y += 3;
+		ty += 3;
+	}
+		
 
 	if (XRot)
 		X += 3;
 	if (YRot)
 		Y += 3;
+
+
 
 	glutPostRedisplay(); // 화면 재 출력
 	glutTimerFunc(100, TimerFunction, 1); // 타이머함수 재 설정
@@ -634,4 +779,7 @@ void set()
 	TetrahedronShape[15][0] = 0.0;TetrahedronShape[15][1] = 0.0;TetrahedronShape[15][2] = 0.5;
 	TetrahedronShape[16][0] = 0.5;TetrahedronShape[16][1] = 0.0;TetrahedronShape[16][2] = 0.5;
 	TetrahedronShape[17][0] = 0.25;TetrahedronShape[17][1] = 0.4;TetrahedronShape[17][2] = 0.25;
+
+
+	
 }
