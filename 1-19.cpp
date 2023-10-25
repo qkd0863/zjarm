@@ -42,6 +42,8 @@ bool select = true, c1 = true, c2 = true;
 bool rot = false;
 bool zrot = false;
 bool solid = true;
+bool t = true;
+
 
 bool grain = true;
 
@@ -126,7 +128,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glEnableVertexAttribArray(PosLocation); // Enable 필수! 사용하겠단 의미
 	glEnableVertexAttribArray(ColorLocation);
 
-	glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 5.0f); //--- 카메라 위치
+	glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 100.0f); //--- 카메라 위치
 	glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, 0.0f); //--- 카메라 바라보는 방향
 	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f); //--- 카메라 위쪽 방향
 
@@ -140,7 +142,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glm::mat4 view;
 	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 	glm::mat4 projection;
-	projection = glm::perspective(glm::radians(45.0f), 800.0f / 800.0f, 0.1f, 100.0f);
+	
 
 	int modelLocation = glGetUniformLocation(shaderProgramID, "transform"); //--- 버텍스 세이더에서 모델링 변환 행렬 변수값을 받아온다.
 	int viewLoc = glGetUniformLocation(shaderProgramID, "viewTransform"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
@@ -157,7 +159,11 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	vTransform = glm::lookAt(cameraPos, cameraDirection, cameraUp);
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &vTransform[0][0]);
 	glm::mat4 pTransform = glm::mat4(1.0f);
-	pTransform = glm::perspective(glm::radians(60.0f), 800.0f / 800.0f, 0.1f, 200.0f);
+
+	if(t)
+		pTransform = glm::ortho(-5.0f, 5.0f, -5.0f, 5.0f, 0.0f, 100.0f);
+	else
+		pTransform = glm::perspective(glm::radians(60.0f), 800.0f / 800.0f, 0.1f, 200.0f);
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, &pTransform[0][0]);
 
 
@@ -459,6 +465,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			solid = false;
 		else
 			solid = true;
+		break;
+	case '1':
+		if (t)
+			t = false;
+		else
+			t = true;
 		break;
 	case 'q':
 		exit(1);

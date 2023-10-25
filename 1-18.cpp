@@ -38,10 +38,12 @@ void set();
 double x1[5], Y1[5], z1[5];
 float mx = 0, my = 0;
 float r1 = 0, r2 = 0, r3 = 0, r4 = 0, r5 = 0, r6 = 0;
+float Y = 0;
 bool left_button;
 bool h1 = false, h2 = false, h3 = false, h4 = false;
 bool t1 = false, t2 = false;
 bool anio = false,anir = false;
+bool yrot = false;
 
 bool Hex = false;
 
@@ -119,6 +121,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 
 
 	glm::mat4 projection = glm::mat4(1.0f);
+
 	projection = glm::ortho(0.0f, 0.0f, -1.0f, 1.0f, -1.0f, 1.0f); //--- 투영 공간 설정: [-100.0, 100.0] 
 	
 
@@ -212,17 +215,18 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		glm::mat4 movey = glm::mat4(1.0f);
 		glm::mat4 movez = glm::mat4(1.0f);
 		glm::mat4 set = glm::mat4(1.0f);
-
+		glm::mat4 rot = glm::mat4(1.0f);
 
 		x = glm::rotate(x, glm::radians(-20.0f), glm::vec3(1.0, 0.0, 0.0));
 		y = glm::rotate(y, glm::radians(-20.0f), glm::vec3(0.0, 1.0, 0.0));
+		rot = glm::rotate(rot, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
 		movex = glm::translate(movex, glm::vec3(-0.25, 0, 0.0f));
 		movey = glm::translate(movey, glm::vec3(0.0, -0.25, 0.0f));
 		movez = glm::translate(movez, glm::vec3(0.0, 0.0, -0.25));
 
 		set = x * y * movex * movey * movez;
 
-		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(set* open));
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x * y *rot* movex * movey * movez* open));
 	}
 	
 	if(Hex)
@@ -237,7 +241,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		glm::mat4 movez = glm::mat4(1.0f);
 		glm::mat4 move = glm::mat4(1.0f);
 		glm::mat4 set = glm::mat4(1.0f);
-
+		glm::mat4 rot = glm::mat4(1.0f);
 
 		x = glm::rotate(x, glm::radians(-20.0f), glm::vec3(1.0, 0.0, 0.0));
 		y = glm::rotate(y, glm::radians(-20.0f), glm::vec3(0.0, 1.0, 0.0));
@@ -245,12 +249,12 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		movey = glm::translate(movey, glm::vec3(0.0, -0.25, 0.0f));
 		movez = glm::translate(movez, glm::vec3(0.0, 0.0, -0.25));
 		move = glm::translate(move, glm::vec3(0.0, r3, 0.0f));
-
+		rot = glm::rotate(rot, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
 		set = x * y * movex * movey * movez;
 
 
 
-		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(set* move));
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x * y *rot* movex * movey * movez * move));
 	}
 
 	if (Hex)
@@ -273,6 +277,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		glm::mat4 movez = glm::mat4(1.0f);
 		glm::mat4 set = glm::mat4(1.0f);
 		glm::mat4 spin = glm::mat4(1.0f);
+		glm::mat4 rot = glm::mat4(1.0f);
 
 		x = glm::rotate(x, glm::radians(-20.0f), glm::vec3(1.0, 0.0, 0.0));
 		y = glm::rotate(y, glm::radians(-20.0f), glm::vec3(0.0, 1.0, 0.0));
@@ -281,9 +286,9 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		movey2 = glm::translate(movey2, glm::vec3(0.0, 0.25, 0.0f));
 		movez = glm::translate(movez, glm::vec3(0.0, 0.0, -0.25));
 		spin = glm::rotate(spin, glm::radians(r1), glm::vec3(1.0, 0.0, 0.0));
+		rot = glm::rotate(rot, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
 
-
-		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x* y* movey2* spin* movex* movey* movez));
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x* y*rot* movey2* spin* movex* movey* movez));
 	}
 	if (Hex)
 		glDrawArrays(GL_TRIANGLES, 12 , 6);		//윗면
@@ -295,19 +300,19 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		glm::mat4 movey = glm::mat4(1.0f);
 		glm::mat4 movez = glm::mat4(1.0f);
 		glm::mat4 set = glm::mat4(1.0f);
-
+		glm::mat4 rot = glm::mat4(1.0f);
 
 		x = glm::rotate(x, glm::radians(-20.0f), glm::vec3(1.0, 0.0, 0.0));
 		y = glm::rotate(y, glm::radians(-20.0f), glm::vec3(0.0, 1.0, 0.0));
 		movex = glm::translate(movex, glm::vec3(-0.25, 0, 0.0f));
 		movey = glm::translate(movey, glm::vec3(0.0, -0.25, 0.0f));
 		movez = glm::translate(movez, glm::vec3(0.0, 0.0, -0.25));
-
+		rot = glm::rotate(rot, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
 		set = x * y * movex * movey * movez;
 
 
 
-		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(set));
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x* y*rot* movex* movey* movez));
 	}
 	if (Hex)
 		glDrawArrays(GL_TRIANGLES, 24 , 6);		//아래
@@ -320,6 +325,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		glm::mat4 movez = glm::mat4(1.0f);
 		glm::mat4 set = glm::mat4(1.0f);
 		glm::mat4 s = glm::mat4(1.0f);
+		glm::mat4 rot = glm::mat4(1.0f);
 
 		x = glm::rotate(x, glm::radians(-20.0f), glm::vec3(1.0, 0.0, 0.0));
 		y = glm::rotate(y, glm::radians(-20.0f), glm::vec3(0.0, 1.0, 0.0));
@@ -327,12 +333,14 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		movey = glm::translate(movey, glm::vec3(0.0, -0.25, 0.0f));
 		movez = glm::translate(movez, glm::vec3(0.0, 0.0, -0.25));
 		s = glm::scale(s, glm::vec3(1.0 - r4, 1.0 - r4, 1.0));
+		rot = glm::rotate(rot, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
+
 
 		set = x * y * movex * movey * movez;
 
 
 
-		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x* y* s* movex* movey* movez));
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x* y*rot* s* movex* movey* movez));
 	}
 	if (Hex)
 		glDrawArrays(GL_TRIANGLES, 30 , 6);		//뒷면
@@ -359,7 +367,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		glm::mat4 set = glm::mat4(1.0f);
 		glm::mat4 s = glm::mat4(1.0f);
 		glm::mat4 spin = glm::mat4(1.0f);
-
+		glm::mat4 rot = glm::mat4(1.0f);
 
 		x = glm::rotate(x, glm::radians(-20.0f), glm::vec3(1.0, 0.0, 0.0));
 		y = glm::rotate(y, glm::radians(-20.0f), glm::vec3(0.0, 1.0, 0.0));
@@ -368,6 +376,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		movez = glm::translate(movez, glm::vec3(0.0, 0.0, 0.0));
 		movey2 = glm::translate(movey2, glm::vec3(0.0, -0.25, 0.0f));
 		movez2 = glm::translate(movez2, glm::vec3(0.0, 0.0, -0.25f));
+		rot = glm::rotate(rot, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
 
 		if(t1 || anio)
 			spin = glm::rotate(spin, glm::radians(r5), glm::vec3(1.0, 0.0, 0.0));
@@ -378,7 +387,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 
 
 
-		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x* y* movey2* movez2* spin* movex* movey* movez));
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x* y*rot* movey2* movez2* spin* movex* movey* movez));
 		
 	}
 	if (!Hex)
@@ -397,7 +406,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		glm::mat4 set = glm::mat4(1.0f);
 		glm::mat4 s = glm::mat4(1.0f);
 		glm::mat4 spin = glm::mat4(1.0f);
-
+		glm::mat4 rot = glm::mat4(1.0f);
 
 		x = glm::rotate(x, glm::radians(-20.0f), glm::vec3(1.0, 0.0, 0.0));
 		y = glm::rotate(y, glm::radians(-20.0f), glm::vec3(0.0, 1.0, 0.0));
@@ -406,6 +415,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		movez = glm::translate(movez, glm::vec3(0.0, 0.0, -0.5));
 		movey2 = glm::translate(movey2, glm::vec3(0.0, -0.25, 0.0f));
 		movez2 = glm::translate(movez2, glm::vec3(0.0, 0.0, 0.25f));
+		rot = glm::rotate(rot, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
 		if(t1 || anio)
 			spin = glm::rotate(spin, glm::radians(r5*-1), glm::vec3(1.0, 0.0, 0.0));
 		if(t2 || anir)
@@ -414,7 +424,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 
 
 
-		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x* y* movey2* movez2* spin* movex* movey* movez));
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x* y*rot* movey2* movez2* spin* movex* movey* movez));
 
 	}
 	if (!Hex)
@@ -432,7 +442,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		glm::mat4 set = glm::mat4(1.0f);
 		glm::mat4 s = glm::mat4(1.0f);
 		glm::mat4 spin = glm::mat4(1.0f);
-
+		glm::mat4 rot = glm::mat4(1.0f);
 
 		x = glm::rotate(x, glm::radians(-20.0f), glm::vec3(1.0, 0.0, 0.0));
 		y = glm::rotate(y, glm::radians(-20.0f), glm::vec3(0.0, 1.0, 0.0));
@@ -442,7 +452,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		
 		movex2 = glm::translate(movey2, glm::vec3(-0.25, 0.0, 0.0f));
 		movey2 = glm::translate(movey2, glm::vec3(0.0, -0.25, 0.0f));
-	
+		rot = glm::rotate(rot, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
 		if(t1 || anio)
 			spin = glm::rotate(spin, glm::radians(r5 * -1), glm::vec3(0.0, 0.0, 1.0));
 		if(t2 || anir)
@@ -452,7 +462,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 
 
 
-		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x * y*movex2*movey2 *spin*  movex * movey * movez));
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x * y*rot*movex2*movey2 *spin*  movex * movey * movez));
 
 	}
 	if (!Hex)
@@ -471,7 +481,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		glm::mat4 set = glm::mat4(1.0f);
 		glm::mat4 s = glm::mat4(1.0f);
 		glm::mat4 spin = glm::mat4(1.0f);
-
+		glm::mat4 rot = glm::mat4(1.0f);
 
 		x = glm::rotate(x, glm::radians(-20.0f), glm::vec3(1.0, 0.0, 0.0));
 		y = glm::rotate(y, glm::radians(-20.0f), glm::vec3(0.0, 1.0, 0.0));
@@ -481,6 +491,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 
 		movex2 = glm::translate(movey2, glm::vec3(0.25, 0.0, 0.0f));
 		movey2 = glm::translate(movey2, glm::vec3(0.0, -0.25, 0.0f));
+		rot = glm::rotate(rot, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
 
 		if(t1||anio)
 			spin = glm::rotate(spin, glm::radians(r5), glm::vec3(0.0, 0.0, 1.0));
@@ -491,7 +502,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 
 
 
-		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x * y * movex2 * movey2 * spin * movex * movey * movez));
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x * y *rot* movex2 * movey2 * spin * movex * movey * movez));
 
 	}
 	if (!Hex)
@@ -525,19 +536,19 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		glm::mat4 movez = glm::mat4(1.0f);
 		glm::mat4 set = glm::mat4(1.0f);
 		glm::mat4 s = glm::mat4(1.0f);
-
+		glm::mat4 rot = glm::mat4(1.0f);
 		x = glm::rotate(x, glm::radians(-20.0f), glm::vec3(1.0, 0.0, 0.0));
 		y = glm::rotate(y, glm::radians(-20.0f), glm::vec3(0.0, 1.0, 0.0));
 		movex = glm::translate(movex, glm::vec3(-0.25, 0, 0.0f));
 		movey = glm::translate(movey, glm::vec3(0.0, -0.25, 0.0f));
 		movez = glm::translate(movez, glm::vec3(0.0, 0.0, -0.25));
 		s = glm::scale(s, glm::vec3(1.0 - r4, 1.0 - r4, 1.0));
-
+		rot = glm::rotate(rot, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
 		set = x * y * movex * movey * movez;
 
 
 
-		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x * y  * movex * movey * movez));
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(x * y*rot  * movex * movey * movez));
 
 	}
 	if (!Hex)
@@ -682,6 +693,13 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		if (Hex)
 			Hex = false;
 		break;
+	case'y':
+		if (yrot)
+			yrot = false;
+		else
+			yrot = true;
+
+		break;
 	case 'q':
 		exit(1);
 		break;
@@ -764,6 +782,10 @@ void convert(int x, int y, float* ox, float* oy)
 
 void TimerFunction(int value)
 {
+	if (yrot)
+		Y += 3;
+
+
 	if (h1)
 		r1 -= 3;
 
