@@ -28,24 +28,38 @@ void InitBuffer();
 void make_vertexShaders();
 void make_fragmentShaders();
 void make_shaderProgram();
-void make_shaderProgram2();
 GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 char* filetobuf(const char* file);
 void set();
 
 
-double x1[5], Y1[5], z1[5];
-float mx = 0, my = 0;
+float Y = 0, Z = 0, ry = 0;
+float mx = 0, my = 0, mz = 0;
+
 bool left_button;
-bool c1 = false, c2 = false, c3 = false, c4 = false, rect = false;
-float X = 30, Y = 30, LY = 30;
-float movex = 0, movey = 0;
-float lightx = 0, lighty = 0, lightz = 1;
-bool xrot = false, yrot = false, Lrot = false;
+bool select = true, c1 = true, c2 = true;
+bool rot = false;
+bool zrot = false;
+bool solid = true;
+
 bool grain = true;
-bool wire = false;
-bool Hex = true;
+
+
+
+float lightpos1[3] = { 1.5,0,1 };
+float lightpos2[3] = { 0,0,1 };
+float lightpos3[3] = { -1.5,0,1 };
+float lightc1[3] = { 1,0,0 };
+float lightc2[3] = { 0,1,0 };
+float lightc3[3] = { 0,0,1 };
+
+
+
+GLfloat HexahedronShape[36][3];
+GLfloat HexahedronColors[36][3];
+GLfloat TetrahedronShape[18][3];
+GLfloat TetrahedronColors[18][3];
 
 float vertices[] = { //--- 버텍스 속성: 좌표값(FragPos), 노말값 (Normal)
 -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
@@ -61,25 +75,21 @@ float vertices[] = { //--- 버텍스 속성: 좌표값(FragPos), 노말값 (Normal)
 -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
 0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f
 };
-GLfloat HexahedronShape[36][3];
-GLfloat HexahedronColors[36][3];
-GLfloat TetrahedronShape[18][3];
-GLfloat TetrahedronColors[18][3];
-
-
 
 GLuint HexPosVbo, TetPosVbo;
 GLuint HexColor, TetColor;
 
 
 GLint width, height;
-GLuint shaderProgramID, shaderProgramID2; //--- 세이더 프로그램 이름
-GLuint vertexShader, vertexShader2; //--- 버텍스 세이더 객체
-GLuint fragmentShader, fragmentShader2; //--- 프래그먼트 세이더 객체
+GLuint shaderProgramID; //--- 세이더 프로그램 이름
+GLuint vertexShader; //--- 버텍스 세이더 객체
+GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 
 
 
-GLfloat lx, ly, lz = 0.0;
+
+
+
 
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정 
 {
@@ -93,7 +103,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 	//--- GLEW 초기화하기
 	glewExperimental = GL_TRUE;
 	glewInit();
-	make_shaderProgram2();
+	make_shaderProgram();
 	InitBuffer();
 	glutMouseFunc(Mouse);
 	glutMotionFunc(Drag);
@@ -101,12 +111,18 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutSpecialFunc(Special);
-	glutTimerFunc(100, TimerFunction, 1);
+	glutTimerFunc(10, TimerFunction, 1);
 
 	glutMainLoop();
 }
 
 GLUquadricObj* qobj;
+GLUquadricObj* qobj2;
+GLUquadricObj* qobj3;
+GLUquadricObj* qobj4;
+GLUquadricObj* qobj5;
+GLUquadricObj* qobj6;
+
 GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 {
 	GLfloat rColor, gColor, bColor;
@@ -121,19 +137,21 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	else
 		glDisable(GL_DEPTH_TEST);
 
-	//glUseProgram(shaderProgramID);
-	glUseProgram(shaderProgramID2);
+	glUseProgram(shaderProgramID);
 
 
 
-	GLuint changePos = glGetUniformLocation(shaderProgramID2, "Pos");
-	int PosLocation = glGetAttribLocation(shaderProgramID2, "in_Position"); //	: 0  Shader의 'layout (location = 0)' 부분
-	int ColorLocation = glGetAttribLocation(shaderProgramID2, "vNormal"); //	: 1
+
+
+
+	GLuint changePos = glGetUniformLocation(shaderProgramID, "Pos");
+	int PosLocation = glGetAttribLocation(shaderProgramID, "in_Position"); //	: 0  Shader의 'layout (location = 0)' 부분
+	int ColorLocation = glGetAttribLocation(shaderProgramID, "in_Color"); //	: 1
 
 	glEnableVertexAttribArray(PosLocation); // Enable 필수! 사용하겠단 의미
 	glEnableVertexAttribArray(ColorLocation);
 
-	glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 5.0f); //--- 카메라 위치
+	glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 8.0f); //--- 카메라 위치
 	glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, 0.0f); //--- 카메라 바라보는 방향
 	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f); //--- 카메라 위쪽 방향
 
@@ -149,24 +167,27 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glm::mat4 projection;
 	projection = glm::perspective(glm::radians(45.0f), 800.0f / 800.0f, 0.1f, 100.0f);
 
-	int modelLocation = glGetUniformLocation(shaderProgramID2, "transform"); //--- 버텍스 세이더에서 모델링 변환 행렬 변수값을 받아온다.
-	int viewLoc = glGetUniformLocation(shaderProgramID2, "viewTransform"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
-	int projLoc = glGetUniformLocation(shaderProgramID2, "projectionTransform");
+	int modelLocation = glGetUniformLocation(shaderProgramID, "transform"); //--- 버텍스 세이더에서 모델링 변환 행렬 변수값을 받아온다.
+	int viewLoc = glGetUniformLocation(shaderProgramID, "viewTransform"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
+	int projLoc = glGetUniformLocation(shaderProgramID, "projectionTransform");
 
 
 
 
 
-	//glm::mat4 mTransform = glm::mat4(1.0f);
-	//mTransform = glm::rotate(mTransform, glm::radians(0.f), glm::vec3(1.0f, 0.0f, 0.0f));
-	//glUniformMatrix4fv(modelLocation, 1, GL_FALSE, &mTransform[0][0]);
+	glm::mat4 mTransform = glm::mat4(1.0f);
+	mTransform = glm::rotate(mTransform, glm::radians(Y), glm::vec3(1.0f, 0.0f, 0.0f));
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, &mTransform[0][0]);
 	glm::mat4 vTransform = glm::mat4(1.0f);
 	vTransform = glm::lookAt(cameraPos, cameraDirection, cameraUp);
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &vTransform[0][0]);
 	glm::mat4 pTransform = glm::mat4(1.0f);
 	pTransform = glm::perspective(glm::radians(60.0f), 800.0f / 800.0f, 0.1f, 200.0f);
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, &pTransform[0][0]);
-	
+
+
+
+
 
 	unsigned int VBO, VAO;
 	unsigned int lightCubeVAO;
@@ -174,7 +195,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 
-	
+
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glBindVertexArray(VAO);
@@ -194,92 +215,115 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glEnableVertexAttribArray(0);
 
 
-	
-	unsigned int lightPosLocation = glGetUniformLocation(shaderProgramID2, "lightPos"); //--- lightPos 값 전달: (0.0, 0.0, 5.0);
-	int lightColorLocation = glGetUniformLocation(shaderProgramID2, "lightColor"); //--- lightColor 값 전달: (1.0, 1.0, 1.0) 백색
-	int objColorLocation = glGetUniformLocation(shaderProgramID2, "objectColor"); //--- object Color값 전달: (1.0, 0.5, 0.3)의 색
-	unsigned int viewPosLocation = glGetUniformLocation(shaderProgramID2, "viewPos"); //--- viewPos 값 전달: 카메라 위치
+
+	unsigned int lightPosLocation = glGetUniformLocation(shaderProgramID, "lightPos"); //--- lightPos 값 전달: (0.0, 0.0, 5.0);
+	int lightColorLocation = glGetUniformLocation(shaderProgramID, "lightColor"); //--- lightColor 값 전달: (1.0, 1.0, 1.0) 백색
+	int objColorLocation = glGetUniformLocation(shaderProgramID, "objectColor"); //--- object Color값 전달: (1.0, 0.5, 0.3)의 색
+	unsigned int viewPosLocation = glGetUniformLocation(shaderProgramID, "viewPos"); //--- viewPos 값 전달: 카메라 위치
 	glUniform3f(viewPosLocation, cameraPos.x, cameraPos.y, cameraPos.z);
 
-	glm::vec3 lightPos(lightx, lighty, lightz);
+
+
+	qobj = gluNewQuadric();
+	qobj2 = gluNewQuadric();
+
+
+	gluQuadricDrawStyle(qobj, GLU_LINE);
+	gluQuadricDrawStyle(qobj2, GLU_FILL);
+
+
+
+
+
 
 
 	{
 		glm::mat4 a = glm::mat4(1.0f);
-		a = glm::rotate(a, glm::radians(120.f), glm::vec3(1.0, 0.0, 0.0));
-		
-
-		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(a));
-		qobj = gluNewQuadric();
-		gluQuadricDrawStyle(qobj, GLU_LINE);
-		gluDisk(qobj, lightz, lightz, 50, 1);
-	}
 
 
-	{
-		GLfloat lp[3] = { 0,0,lightz };
-
-
-		glm::mat4 a = glm::mat4(1.0f);
-
-		a = glm::rotate(a, glm::radians(30.f), glm::vec3(1.0, 0.0, 0.0));
-		a = glm::rotate(a, glm::radians(LY), glm::vec3(0.0, 1.0, 0.0));
-		a = glm::translate(a, glm::vec3(0, 0, lightz));
+		a = glm::translate(a, glm::vec3(1.5, 0, 0));
+		a = glm::rotate(a, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
+		a = glm::translate(a, glm::vec3(0, 0, 1.0));
 		a = glm::scale(a, glm::vec3(0.2f));
-		
+
 
 		glm::vec4 k = glm::vec4(1, 1, 1, 1);
 
 
 		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(a));
-		glUniform3f(lightColorLocation, 1.0, 1.0, 1.0);
+		glUniform3f(lightColorLocation, lightc1[0], lightc1[1], lightc1[2]);
 		glUniform3f(lightPosLocation, (a* k).x, (a* k).y, (a* k).z);
-		glUniform3f(objColorLocation, 0.4, 0.4, 0.4);
+		glUniform3f(objColorLocation, 0.5, 0.5, 0.5);
 		glBindVertexArray(lightCubeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
+	{
+		glm::mat4 a = glm::mat4(1.0f);
+		a = glm::translate(a, glm::vec3(lightpos1[0], 0, 0));
+
+
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(a));
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 
 
 	{
 		glm::mat4 a = glm::mat4(1.0f);
-	
 
-		a = glm::rotate(a, glm::radians(X), glm::vec3(1.0, 0.0, 0.0));
+		a = glm::rotate(a, glm::radians(0.f), glm::vec3(1.0, 0.0, 0.0));
 		a = glm::rotate(a, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
-		a = glm::translate(a, glm::vec3(0, 0, 0.0f));
+		a = glm::translate(a, glm::vec3(lightpos2[0], lightpos2[1], lightpos2[2]));
+		a = glm::scale(a, glm::vec3(0.2f));
 
-	
+
+		glm::vec4 k = glm::vec4(1, 1, 1, 1);
+
+
 		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(a));
+		glUniform3f(lightColorLocation, lightc2[0], lightc2[1], lightc2[2]);
+		glUniform3f(lightPosLocation, (a * k).x, (a * k).y, (a * k).z);
+		glUniform3f(objColorLocation, 0.4, 0.4, 0.4);
+		glBindVertexArray(lightCubeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
+	{
+		glm::mat4 a = glm::mat4(1.0f);
+		a = glm::translate(a, glm::vec3(lightpos2[0], 0, 0));
 
 
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(a));
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		if (Hex)
-		{
-			glUniform3f(objColorLocation, 0.0, 1.0, 0.0);
-			glBindVertexArray(VAO);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
-		else
-		{
-			glBindBuffer(GL_ARRAY_BUFFER, TetPosVbo); // VBO Bind
-			glVertexAttribPointer(PosLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-			{
-				glBindBuffer(GL_ARRAY_BUFFER, TetColor); // VBO Bind
-				glVertexAttribPointer(ColorLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-			}
-
-
-			if (wire)
-				glDrawArrays(GL_LINE_STRIP, 0, 18);
-			else
-				glDrawArrays(GL_TRIANGLES, 0, 18);
-		}
 	}
 
-
+	{
+		glm::mat4 a = glm::mat4(1.0f);
+		
 	
+		a = glm::translate(a, glm::vec3(-1.5, 0, 0));
+		a = glm::rotate(a, glm::radians(Y), glm::vec3(0.0, 1.0, 0.0));
+		a = glm::translate(a, glm::vec3(0, 0, 1.0));
+		a = glm::scale(a, glm::vec3(0.2f));
 
 
+		glm::vec4 k = glm::vec4(lightpos3[0], lightpos3[1], lightpos3[2], 1);
+
+
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(a));
+		glUniform3f(lightColorLocation, lightc3[0], lightc3[1], lightc3[2]);
+		glUniform3f(lightPosLocation, (a * k).x, (a * k).y, (a * k).z);
+		glUniform3f(objColorLocation, 0.4, 0.4, 0.4);
+		glBindVertexArray(lightCubeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
+	{
+		glm::mat4 a = glm::mat4(1.0f);
+		a = glm::translate(a, glm::vec3(lightpos3[0], 0, 0));
+
+
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(a));
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
 
 
 
@@ -288,30 +332,13 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glDisableVertexAttribArray(PosLocation); // Disable 필수!
 	glDisableVertexAttribArray(ColorLocation);
 
-	{
-		int objColorLocation = glGetUniformLocation(shaderProgramID2, "objectColor"); //--- object Color값 전달: (1.0, 0.5, 0.3)의 색
-		glUniform3f(objColorLocation, 1.0, 0.0, 0.0);
-		
 
-		glm::mat4 a = glm::mat4(1.0f);
-		
-		a = glm::rotate(a, glm::radians(30.0f), glm::vec3(1.0, 0.0, 0.0));
-		a = glm::rotate(a, glm::radians(30.0f), glm::vec3(0.0, 1.0, 0.0));
-		
-		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(a));
-		glLineWidth(5.0);
 
-		glBegin(GL_LINES);
-		glColor3f(0.0, 1.0, 0.0);
-		glVertex3f(-1.0, 0.0, 0.0);
-		glVertex3f(1.0, 0.0, 0.0);
-		glVertex3f(0.0, -1.0, 0.0);
-		glVertex3f(0.0, 1.0, 0.0);
-		glVertex3f(0.0, 0.0, -1.0);
-		glVertex3f(0.0, 0.0, 1.0);
-		glEnd();
-		glFinish();
-	}
+
+
+
+
+
 	glutSwapBuffers();
 	glutPostRedisplay();
 
@@ -330,51 +357,65 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 
 	switch (key)
 	{
-	case GLUT_KEY_LEFT:
-		movex += 0.01;
-		break;
-	case 'x':
-		xrot = true;
-		yrot = false;
-		break;
-	case 'y':
-		xrot = false;
-		yrot = true;
-		break;
-	case 'r':
-		if (Lrot)
-			Lrot = false;
-		else
-			Lrot = true;
-		break;
-	case 'h':
-		if (grain)
-			grain = false;
-		else
-			grain = true;
-		break;
-	case 'w':
-		if (wire)
-			wire = false;
-		else
-			wire = true;
-		break;
-	case 's':
-		xrot = false;yrot = false;
-		X = 30;Y = -30;
-		movex = 0; movey = 0;
-		break;
-	case 'c':
-		Hex = true;
-		break;
-	case 'p':
-		Hex = false;
-		break;
 	case '+':
-		lightz -= 0.05;
+		mz += 0.1;
+		lightpos1[2] += 0.1;
+		lightpos2[2] += 0.1;
+		lightpos3[2] += 0.1;
 		break;
 	case '-':
-		lightz += 0.05;
+		mz -= 0.1;
+		lightpos1[2] -= 0.1;
+		lightpos2[2] -= 0.1;
+		lightpos3[2] -= 0.1;
+		break;
+	case 'r':
+		if (rot)
+			rot = false;
+		else
+			rot = true;
+		break;
+	case '1':
+		for (int i = 0;i < 3;i++)
+			lightc1[i] = rand() % 255 / 100.0;
+		break;
+	case '2':
+		for (int i = 0;i < 3;i++)
+			lightc2[i] = rand() % 255 / 100.0;
+		break;
+	case '3':
+		for (int i = 0;i < 3;i++)
+			lightc3[i] = rand() % 255 / 100.0;
+		break;
+	case 'd':
+		mx += 0.1;
+		break;
+	case 'a':
+		mx -= 0.1;
+		break;
+	case 'w':
+		my += 0.1;
+		break;
+	case 's':
+		my -= 0.1;
+		break;
+	case 'y':
+		if (rot)
+			rot = false;
+		else
+			rot = true;
+		break;
+	case 'z':
+		if (zrot)
+			zrot = false;
+		else
+			zrot = true;
+		break;
+	case 'm':
+		if (solid)
+			solid = false;
+		else
+			solid = true;
 		break;
 	case 'q':
 		exit(1);
@@ -388,18 +429,7 @@ GLvoid Special(int key, int x, int y)
 {
 	switch (key)
 	{
-	case GLUT_KEY_LEFT:
-		movex -= 0.01;
-		break;
-	case GLUT_KEY_RIGHT:
-		movex += 0.01;
-		break;
-	case GLUT_KEY_UP:
-		movey += 0.01;
-		break;
-	case GLUT_KEY_DOWN:
-		movey -= 0.01;
-		break;
+
 	}
 
 	glutPostRedisplay();
@@ -458,15 +488,13 @@ void convert(int x, int y, float* ox, float* oy)
 
 void TimerFunction(int value)
 {
-	if (xrot)
-		X += 3;
-	if (yrot)
+	if(rot)
 		Y += 3;
-	if (Lrot)
-		LY += 3;
+
+	
 
 	glutPostRedisplay(); // 화면 재 출력
-	glutTimerFunc(100, TimerFunction, 1); // 타이머함수 재 설정
+	glutTimerFunc(10, TimerFunction, 1); // 타이머함수 재 설정
 }
 
 
@@ -532,65 +560,6 @@ void make_shaderProgram()
 }
 
 
-void make_vertexShaders2()
-{
-	vertexSource = filetobuf("vertex2.glsl");
-	//--- 버텍스 세이더 객체 만들기
-	vertexShader2 = glCreateShader(GL_VERTEX_SHADER);
-	//--- 세이더 코드를 세이더 객체에 넣기
-	glShaderSource(vertexShader2, 1, (const GLchar**)&vertexSource, 0);
-	//--- 버텍스 세이더 컴파일하기
-	glCompileShader(vertexShader2);
-	//--- 컴파일이 제대로 되지 않은 경우: 에러 체크
-	GLint result;
-	GLchar errorLog[512];
-	glGetShaderiv(vertexShader2, GL_COMPILE_STATUS, &result);
-	if (!result)
-	{
-		glGetShaderInfoLog(vertexShader2, 512, NULL, errorLog);
-		cerr << "ERROR: vertex shader 컴파일 실패\n" << errorLog << endl;
-		return;
-	}
-}
-
-void make_fragmentShaders2()
-{
-	fragmentSource = filetobuf("fragment2.glsl");
-	//--- 프래그먼트 세이더 객체 만들기
-	fragmentShader2 = glCreateShader(GL_FRAGMENT_SHADER);
-	//--- 세이더 코드를 세이더 객체에 넣기
-	glShaderSource(fragmentShader2, 1, (const GLchar**)&fragmentSource, 0);
-	//--- 프래그먼트 세이더 컴파일
-	glCompileShader(fragmentShader2);
-	//--- 컴파일이 제대로 되지 않은 경우: 컴파일 에러 체크
-	GLint result;
-	GLchar errorLog[512];
-	glGetShaderiv(fragmentShader2, GL_COMPILE_STATUS, &result);
-	if (!result)
-	{
-		glGetShaderInfoLog(fragmentShader2, 512, NULL, errorLog);
-		cerr << "ERROR: fragment shader 컴파일 실패\n" << errorLog << endl;
-		return;
-	}
-}
-
-
-void make_shaderProgram2()
-{
-	make_vertexShaders2(); //--- 버텍스 세이더 만들기
-	make_fragmentShaders2(); //--- 프래그먼트 세이더 만들기
-	//-- shader Program
-	shaderProgramID2 = glCreateProgram();
-	glAttachShader(shaderProgramID2, vertexShader2);
-	glAttachShader(shaderProgramID2, fragmentShader2);
-	glLinkProgram(shaderProgramID2);
-	//--- 세이더 삭제하기
-	glDeleteShader(vertexShader2);
-	glDeleteShader(fragmentShader2);
-	//--- Shader Program 사용하기
-	glUseProgram(shaderProgramID2);
-}
-
 
 char* filetobuf(const char* file)
 {
@@ -628,8 +597,6 @@ void InitBuffer()
 	glBindBuffer(GL_ARRAY_BUFFER, TetColor);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(TetrahedronColors), TetrahedronColors, GL_STATIC_DRAW);
 
-
-	
 }
 
 
@@ -775,4 +742,7 @@ void set()
 	TetrahedronShape[15][0] = 0.0;TetrahedronShape[15][1] = 0.0;TetrahedronShape[15][2] = 0.5;
 	TetrahedronShape[16][0] = 0.5;TetrahedronShape[16][1] = 0.0;TetrahedronShape[16][2] = 0.5;
 	TetrahedronShape[17][0] = 0.25;TetrahedronShape[17][1] = 0.4;TetrahedronShape[17][2] = 0.25;
+
+
+
 }
